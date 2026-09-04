@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom iPhone Simulator (iOS 18 Ultimate Polish)</title>
+    <style>
+        :root {
+            --phone-width: 360px;
+            --phone-height: 760px;
+            --system-blue: #007AFF;
+            --system-green: #34C759;
+            --system-gray: #8E8E93;
+            --system-gray6: #F2F2F7;
+            --wallpaper-grad: linear-gradient(180deg, #2b5876 0%, #4e4376 100%);
+            --screen-dimming: 1;
+            --cursor-color: rgba(255, 255, 255, 0.2);
+            --cursor-border: rgba(255, 255, 255, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #121216;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            gap: 40px;
+            perspective: 1200px;
+        }
+
+        /* --- Advanced Control Sandbox Panel --- */
+        .sandbox-panel {
+            width: 360px;
+            background: #1e1e24;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            color: white;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .sandbox-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gesture-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 12px;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #b0b0b5;
+        }
+
+        .gesture-card strong { color: #fff; }
+        .gesture-card ul { margin-top: 4px; padding-left: 14px; }
+
+        /* Tilt Controls */
+        .tilt-control-group {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .slider-label-area {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #b0b0b5;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #3a3a40;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--system-blue);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .action-button-row { display: flex; gap: 8px; }
+
+        .control-btn {
+            flex: 1;
+            background: var(--system-blue);
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .control-btn.secondary { background: #3a3a40; flex: 0 0 60px; }
+        .control-btn:active { transform: scale(0.97); }
+
+        /* Segmented View Switchers */
+        .segmented-control {
+            display: flex;
+            background: #2c2c34;
+            padding: 3px;
+            border-radius: 10px;
+            gap: 3px;
+        }
+
+        .segment-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #8e8e93;
+            padding: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .segment-btn.active {
+            background: var(--system-blue);
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Theme & Cursor Customizers */
+        .theme-picker { display: flex; gap: 8px; }
+        .theme-swatch {
+            flex: 1; height: 28px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s;
+        }
+        .theme-swatch.active { border-color: white; }
+
+        .cursor-picker { display: flex; gap: 8px; align-items: center; }
+        .cursor-option {
+            width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
+        }
+        .cursor-option.active { border-color: white; transform: scale(1.1); }
+
+        /* --- iPhone Container Frame & External Hardware Buttons --- */
+        .iphone-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .iphone-container {
+            position: relative;
+            width: var(--phone-width);
+            height: var(--phone-height);
+            border: 12px solid #2d2d30;
+            border-radius: 48px;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.85), inset 0 0 4px rgba(255, 255, 255, 0.2);
+            background: #000;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            transform-style: preserve-3d;
+            transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Slim Glassmorphism External Hardware Buttons matching the screenshot style */
+        .hardware-btn {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 0 2px rgba(255, 255, 255, 0.4);
+            z-index: 950;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s, border-color 0.15s;
+        }
+        .hardware-btn:hover {
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+        .hardware-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Left Side External Buttons (Slim, rounded pill tabs sticking out of the metal bezel) */
+        .btn-action {
+            left: -19px;
+            top: 130px;
+            width: 7px;
+            height: 32px;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .btn-vol-up {
+            left: -19px;
+            top: 180px;
+            width: 7px;
+            height: 50px;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .btn-vol-down {
+            left: -19px;
+            top: 240px;
+            width: 7px;
+            height: 50px;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        /* Right Side External Button (Side Power/Lock Button) */
+        .btn-lock {
+            right: -19px;
+            top: 195px;
+            width: 7px;
+            height: 70px;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        /* Apple Dynamic Island Notch */
+        .dynamic-island {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 115px;
+            height: 28px;
+            background: #000;
+            border-radius: 20px;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            pointer-events: none;
+            transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), height 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-radius 0.3s ease;
+        }
+        .dynamic-island.pill-expanded {
+            width: 230px;
+            height: 45px;
+            border-radius: 24px;
+            background: #000;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .di-camera { width: 10px; height: 10px; background: #111; border-radius: 50%; }
+        .di-sensor { width: 6px; height: 6px; background: #080808; border-radius: 50%; }
+
+        .di-content {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            gap: 8px;
+        }
+        .dynamic-island.pill-expanded .di-content {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 44px;
+            z-index: 750;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            pointer-events: none;
+        }
+        .status-bar-right { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+
+        /* Screen Viewport */
+        .screen-viewport {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            cursor: none;
+            border-radius: 36px;
+        }
+
+        .screen-brightness-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, calc(1 - var(--screen-dimming)));
+            pointer-events: none;
+            z-index: 700;
+            transition: background 0.1s ease;
+        }
+
+        .custom-cursor {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--cursor-border);
+            background: var(--cursor-color);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            display: none;
+            transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+        .screen-viewport:hover .custom-cursor { display: block; }
+        .custom-cursor.active {
+            transform: translate(-50%, -50%) scale(0.8);
+            background: var(--cursor-border);
+        }
+
+        .wallpaper {
+            position: absolute;
+            top: -40px; left: -40px; right: -40px; bottom: -40px;
+            background: var(--wallpaper-grad);
+            background-size: cover;
+            z-index: 0;
+        }
+
+        .page-track {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            width: 200%;
+            height: 100%;
+            transform: translateX(0px);
+            touch-action: pan-y;
+        }
+
+        .page {
+            width: 50%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 65px 22px 90px 22px;
+            flex-shrink: 0;
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            row-gap: 24px;
+            column-gap: 16px;
+        }
+
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .app-icon:active { transform: scale(0.88); }
+
+        .icon-box {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 26px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .app-label {
+            color: #ffffff;
+            font-size: 11px;
+            margin-top: 6px;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+        }
+
+        .page-dots {
+            position: absolute;
+            bottom: 85px; left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .dot { width: 7px; height: 7px; background: rgba(255, 255, 255, 0.4); border-radius: 50%; transition: width 0.3s, background 0.3s; }
+        .dot.active { width: 16px; border-radius: 3px; background: rgba(255, 255, 255, 1); }
+
+        .dock {
+            position: absolute;
+            bottom: 18px; left: 14px; right: 14px;
+            height: 72px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 8px;
+            box-sizing: border-box;
+            z-index: 100;
+        }
+        .dock .app-label { display: none; }
+
+        .home-indicator {
+            position: absolute;
+            bottom: 6px; left: 50%;
+            transform: translateX(-50%);
+            width: 130px; height: 4px;
+            background: white;
+            border-radius: 100px;
+            z-index: 800;
+            cursor: pointer;
+        }
+
+        .smooth-animate { transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
+
+        /* --- Fullscreen Views --- */
+        .os-view {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 300;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+            display: flex; flex-direction: column; border-radius: 36px; overflow: hidden;
+        }
+        .os-view.active { opacity: 1; pointer-events: auto; }
+
+        #lock-view {
+            background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%);
+            justify-content: space-between; align-items: center; padding: 80px 20px 40px 20px; color: white; text-align: center;
+            z-index: 650;
+        }
+        .lock-time { font-size: 68px; font-weight: 300; letter-spacing: -2px; }
+        .lock-date { font-size: 18px; font-weight: 500; }
+
+        /* --- iOS 18 Control Center Design --- */
+        #control-view {
+            background: rgba(20, 20, 25, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            padding: 55px 16px 20px 16px; 
+            color: white;
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            z-index: 650;
+            overflow-y: auto;
+        }
+        .cc-row { display: flex; gap: 12px; }
+        .cc-box-grid {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            padding: 14px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            align-items: center;
+            justify-items: center;
+        }
+        .cc-icon-btn {
+            width: 46px; height: 46px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; cursor: pointer; transition: background 0.2s, transform 0.1s;
+        }
+        .cc-icon-btn:active { transform: scale(0.93); }
+        .cc-icon-btn.active { background: var(--system-blue); color: white; }
+
+        .cc-media-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .cc-sliders-container {
+            display: flex;
+            gap: 12px;
+            height: 160px;
+        }
+
+        .cc-pillar-slider {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 28px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            cursor: pointer;
+        }
+
+        .cc-pillar-fill {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 28px;
+            transition: height 0.05s ease-out;
+            pointer-events: none;
+        }
+
+        .cc-pillar-content {
+            position: absolute;
+            bottom: 0; left: 0; right: 0; top: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .cc-pillar-slider:nth-child(1) .cc-pillar-fill { background: #ffffff; }
+        .cc-pillar-slider:nth-child(1) .cc-pillar-content { color: #1c1c1e; }
+        .cc-pillar-slider:nth-child(2) .cc-pillar-fill { background: rgba(255, 255, 255, 0.85); }
+        .cc-pillar-slider:nth-child(2) .cc-pillar-content { color: #1c1c1e; }
+
+        .cc-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .cc-bottom-tile {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .cc-bottom-tile:active { transform: scale(0.93); }
+        .cc-bottom-tile.active { background: var(--system-blue); color: white; }
+        .cc-bottom-tile span:first-child { font-size: 20px; }
+
+        /* Notification Center View */
+        #notification-view {
+            background: rgba(20, 20, 25, 0.75);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            padding: 60px 20px 30px 20px; color: white;
+            display: flex; flex-direction: column; gap: 14px;
+            z-index: 650;
+        }
+        .notification-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .notif-header { display: flex; justify-content: space-between; font-size: 12px; color: #b0b0b5; }
+        .notif-title { font-size: 14px; font-weight: 600; color: #fff; }
+        .notif-body { font-size: 13px; color: #dedee3; }
+
+        /* --- App Windows --- */
+        .app-window {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            z-index: 500;
+            transform: scale(1) translateY(0);
+            transform-origin: center;
+            opacity: 1;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, border-radius 0.3s ease;
+            display: flex; flex-direction: column; overflow: hidden; border-radius: 36px;
+            pointer-events: auto;
+        }
+        .app-window.hidden { transform: scale(0); opacity: 0; pointer-events: none; }
+
+        .app-header {
+            padding: 50px 20px 15px 20px;
+            font-size: 26px; font-weight: 700; color: #000;
+            border-bottom: 1px solid #E5E5EA; background: #F9F9FB;
+        }
+        .app-content { flex: 1; overflow-y: auto; background: var(--system-gray6); padding: 20px; }
+
+        .settings-group { background: white; border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #E5E5EA; font-size: 15px; color: #000; }
+        .settings-item:last-child { border-bottom: none; }
+
+        .switch { position: relative; display: inline-block; width: 48px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider-toggle {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E9E9EA; transition: .3s; border-radius: 30px;
+        }
+        .slider-toggle:before {
+            position: absolute; content: ""; height: 24px; width: 24px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider-toggle { background-color: var(--system-green); }
+        input:checked + .slider-toggle:before { transform: translateX(20px); }
+
+        .photos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .photo-thumb { aspect-ratio: 1; background: #ddd; border-radius: 4px; background-size: cover; background-position: center; }
+
+        /* --- Authentic Apple Carousel App Switcher Overlay --- */
+        .app-switcher-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            perspective: 1000px;
+            touch-action: pan-x pan-y;
+        }
+        .app-switcher-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .switcher-carousel {
+            display: flex;
+            gap: 20px;
+            overflow-x: scroll;
+            width: 100%;
+            padding: 40px 60px;
+            align-items: center;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .switcher-carousel::-webkit-scrollbar { display: none; }
+
+        .switcher-card {
+            flex: 0 0 210px;
+            height: 380px;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            cursor: pointer;
+            scroll-snap-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+            touch-action: pan-y;
+        }
+        .switcher-card.active-card {
+            transform: scale(1);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+        }
+
+        .switcher-card-top {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 10px 10px 10px;
+            background: #fafafc;
+            border-bottom: 1px solid #efefef;
+        }
+        .switcher-app-icon {
+            width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .switcher-card-title {
+            font-size: 13px; font-weight: 600; color: #1c1c1e;
+        }
+        .switcher-card-preview {
+            flex: 1; background: #ffffff; padding: 12px; font-size: 11px; color: #666; overflow: hidden;
+        }
+
+        .switcher-empty-msg {
+            color: white;
+            font-size: 14px;
+            text-align: center;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .telemetry-footer {
+            width: var(--phone-width);
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #8e8e93;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sandbox-panel">
+        <div class="sandbox-section-title">Interactive Gestures &amp; Controls</div>
+        <div class="gesture-card">
+            Drag mouse or touch inside phone viewport:
+            <ul>
+                <li><strong>Swipe up to unlock:</strong> Lock Screen</li>
+                <li><strong>Swipe down from top corners/middle:</strong> Open Notif or Control Center</li>
+                <li><strong>Swipe up card inside App Switcher:</strong> Removes card without closing switcher. Switcher auto-closes if empty.</li>
+                <li><strong>Tap outside switcher cards:</strong> Dismisses App Switcher to Home screen.</li>
+            </ul>
+        </div>
+
+        <div class="sandbox-section-title">3D Device Tilt Physics</div>
+        <div class="tilt-control-group">
+            <div class="slider-row">
+                <div class="slider-label-area">
+                    <span>Pitch (X-Axis Tilt)</span>
+                    <span id="pitch-val">0°</span>
+                </div>
+                <input type="range" id="pitch-slider" min="-45" max="45" value="0">
+            </div>
+            <div class="slider-row">
+                <div class="slider-label-area">
+                    <span>Roll (Y-Axis Tilt)</span>
+                    <span id="roll-val">0°</span>
+                </div>
+                <input type="range" id="roll-slider" min="-45" max="45" value="0">
+            </div>
+            <div class="action-button-row">
+                <button class="control-btn" id="btn-lock-toggle">Lock / Wake Screen</button>
+                <button class="control-btn secondary" id="btn-reset-tilt">Reset</button>
+            </div>
+        </div>
+
+        <div class="sandbox-section-title">Operating System Views</div>
+        <div class="segmented-control" id="view-selector">
+            <button class="segment-btn" data-view="lock">Lock</button>
+            <button class="segment-btn active" data-view="home">Home</button>
+            <button class="segment-btn" data-view="notification">Notifs</button>
+            <button class="segment-btn" data-view="control">Control</button>
+        </div>
+
+        <div class="sandbox-section-title">Wallpaper Theme</div>
+        <div class="theme-picker">
+            <div class="theme-swatch active" style="background: linear-gradient(180deg, #2b5876 0%, #4e4376 100%);" data-theme="1"></div>
+            <div class="theme-swatch" style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);" data-theme="2"></div>
+            <div class="theme-swatch" style="background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);" data-theme="3"></div>
+        </div>
+
+        <div class="sandbox-section-title">Custom Circle Color</div>
+        <div class="cursor-picker">
+            <div class="cursor-option active" style="background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.7);" data-color="white" title="Glass White"></div>
+            <div class="cursor-option" style="background: rgba(0,122,255,0.3); border: 2px solid #007AFF;" data-color="blue" title="iOS Blue"></div>
+            <div class="cursor-option" style="background: rgba(52,199,89,0.3); border: 2px solid #34C759;" data-color="green" title="iOS Green"></div>
+            <div class="cursor-option" style="background: rgba(255,59,48,0.3); border: 2px solid #FF3B30;" data-color="red" title="iOS Red"></div>
+            <div class="cursor-option" style="background: rgba(255,204,0,0.3); border: 2px solid #FFCC00;" data-color="yellow" title="iOS Yellow"></div>
+        </div>
+    </div>
+
+    <div class="iphone-wrapper">
+        <div class="iphone-container" id="phoneContainer">
+            <div class="hardware-btn btn-action" id="hwActionBtn" title="Action Button"></div>
+            <div class="hardware-btn btn-vol-up" id="hwVolUp" title="Volume Up"></div>
+            <div class="hardware-btn btn-vol-down" id="hwVolDown" title="Volume Down"></div>
+            <div class="hardware-btn btn-lock" id="hwLockBtn" title="Lock Button"></div>
+
+            <div class="dynamic-island" id="dynamicIsland">
+                <div class="di-sensor"></div>
+                <div class="di-content" id="diContent">
+                    <span id="diBellIcon" style="color: #ff3b30; font-size: 16px;">🔕</span>
+                    <span id="diBellText" style="font-size: 12px; font-weight: 600;">Silent</span>
+                </div>
+                <div class="di-camera"></div>
+            </div>
+
+            <div class="status-bar">
+                <span id="clock">13:40</span>
+                <div class="status-bar-right">
+                    <span>5G</span>
+                    <svg width="16" height="10" viewBox="0 0 18 12" fill="white">
+                        <rect x="1" y="3" width="13" height="8" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
+                        <path d="M15.5 5.5V8.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                        <rect x="3" y="5" width="9" height="4" rx="1" fill="white"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="screen-viewport" id="viewport">
+                <div class="screen-brightness-overlay" id="brightnessOverlay"></div>
+
+                <div class="custom-cursor" id="customCursor"></div>
+
+                <div class="wallpaper" id="wallpaper"></div>
+                
+                <div class="os-view active" id="home-view-container">
+                    <div class="page-track smooth-animate" id="track">
+                        <div class="page">
+                            <div class="app-grid">
+                                <div class="app-icon" data-app="settings">
+                                    <div class="icon-box" style="background: #8e8e93;">⚙️</div>
+                                    <div class="app-label">Settings</div>
+                                </div>
+                                <div class="app-icon" data-app="weather">
+                                    <div class="icon-box" style="background: linear-gradient(#52c2ff, #007aff);">☀️</div>
+                                    <div class="app-label">Weather</div>
+                                </div>
+                                <div class="app-icon" data-app="maps">
+                                    <div class="icon-box" style="background: linear-gradient(#34c759, #28a745);">🗺️</div>
+                                    <div class="app-label">Maps</div>
+                                </div>
+                                <div class="app-icon" data-app="messages">
+                                    <div class="icon-box" style="background: linear-gradient(#34aadc, #007aff);">💬</div>
+                                    <div class="app-label">Messages</div>
+                                </div>
+                                <div class="app-icon" data-app="photos">
+                                    <div class="icon-box" style="background: linear-gradient(#FF9500, #FF2D55);">🖼️</div>
+                                    <div class="app-label">Photos</div>
+                                </div>
+                                <div class="app-icon" data-app="camera">
+                                    <div class="icon-box" style="background: #3a3a3c;">📷</div>
+                                    <div class="app-label">Camera</div>
+                                </div>
+                                <div class="app-icon" data-app="safari">
+                                    <div class="icon-box" style="background: #ffffff;">🧭</div>
+                                    <div class="app-label">Safari</div>
+                                </div>
+                                <div class="app-icon" data-app="motion">
+                                    <div class="icon-box" style="background: linear-gradient(#af52de, #5856d6);">🔄</div>
+                                    <div class="app-label">Motion Lab</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="page">
+                            <div class="app-grid">
+                                <div class="app-icon" data-app="health">
+                                    <div class="icon-box" style="background: linear-gradient(#ff9500, #ff5e3a);">🧡</div>
+                                    <div class="app-label">Health</div>
+                                </div>
+                                <div class="app-icon" data-app="notes">
+                                    <div class="icon-box" style="background: linear-gradient(#ffcc00, #ff9500);">📝</div>
+                                    <div class="app-label">Notes</div>
+                                </div>
+                                <div class="app-icon" data-app="stocks">
+                                    <div class="icon-box" style="background: #000000;">📈</div>
+                                    <div class="app-label">Stocks</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="page-dots">
+                        <div class="dot active" id="dot0"></div>
+                        <div class="dot" id="dot1"></div>
+                    </div>
+
+                    <div class="dock">
+                        <div class="app-icon" data-app="phone">
+                            <div class="icon-box" style="background: linear-gradient(#54e346, #21bf12);">📞</div>
+                        </div>
+                        <div class="app-icon" data-app="mail">
+                            <div class="icon-box" style="background: #2c2c2e;">✉️</div>
+                        </div>
+                        <div class="app-icon" data-app="music">
+                            <div class="icon-box" style="background: linear-gradient(#ff5e3a, #ff2a68);">🎵</div>
+                        </div>
+                        <div class="app-icon" data-app="podcasts">
+                            <div class="icon-box" style="background: linear-gradient(#af52de, #8944ab);">🎙️</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="os-view" id="lock-view">
+                    <div>
+                        <div style="font-size: 32px; margin-bottom: 8px;">🔒</div>
+                        <div class="lock-time" id="lock-clock">13:40</div>
+                        <div class="lock-date">Friday, September 4</div>
+                    </div>
+                    <div style="font-size: 13px; color: rgba(255,255,255,0.7);">Swipe up to unlock</div>
+                </div>
+
+                <div class="os-view" id="notification-view">
+                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px; text-align: center;">Notification Center</div>
+                    <div class="notification-card">
+                        <div class="notif-header"><span>Messages</span><span>10m ago</span></div>
+                        <div class="notif-title">Alex</div>
+                        <div class="notif-body">Hey, are we still meeting up for the study group later?</div>
+                    </div>
+                    <div class="notification-card">
+                        <div class="notif-header"><span>Weather</span><span>1h ago</span></div>
+                        <div class="notif-title">Sunny Conditions</div>
+                        <div class="notif-body">Expect clear skies throughout the afternoon.</div>
+                    </div>
+                </div>
+
+                <div class="os-view" id="control-view">
+                    <div class="cc-row">
+                        <div class="cc-box-grid">
+                            <div class="cc-icon-btn active" data-toggle="airplane">✈️</div>
+                            <div class="cc-icon-btn active" data-toggle="cellular">📶</div>
+                            <div class="cc-icon-btn active" data-toggle="wifi">🛜</div>
+                            <div class="cc-icon-btn active" data-toggle="battery">🔋</div>
+                        </div>
+                        <div class="cc-media-card">
+                            <div style="display: flex; align-items: center; gap: 8px; font-size: 11px;">
+                                <div style="width:24px; height:24px; background:var(--system-blue); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px;">🎵</div>
+                                <div style="overflow:hidden;">
+                                    <div style="font-weight:600; white-space:nowrap; text-overflow:ellipsis;">Simulated ...</div>
+                                    <div style="color:#aaa; font-size:10px;">iOS Audio C...</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: space-around; align-items: center; font-size: 14px;">
+                                <span style="cursor:pointer;" id="mediaPrev">⏮️</span>
+                                <span style="font-size: 16px; cursor:pointer;" id="mediaPlay">▶️</span>
+                                <span style="cursor:pointer;" id="mediaNext">⏭️</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cc-sliders-container">
+                        <div class="cc-pillar-slider" id="brightnessPillar">
+                            <div class="cc-pillar-fill" id="brightnessFill" style="height: 79%;"></div>
+                            <div class="cc-pillar-content">
+                                <span style="font-size: 20px;">☀️</span>
+                                <span style="font-size: 11px; font-weight: 600;" id="brightnessVal">79%</span>
+                            </div>
+                        </div>
+                        <div class="cc-pillar-slider" id="volumePillar">
+                            <div class="cc-pillar-fill" id="volumeFill" style="height: 79%;"></div>
+                            <div class="cc-pillar-content">
+                                <span style="font-size: 20px;">🔊</span>
+                                <span style="font-size: 11px; font-weight: 600;" id="volumeVal">79%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cc-grid-4">
+                        <div class="cc-bottom-tile" data-tile="lock">
+                            <span>🔒</span>
+                            <span>Lock</span>
+                        </div>
+                        <div class="cc-bottom-tile" data-tile="dark">
+                            <span>🌙</span>
+                            <span>Dark</span>
+                        </div>
+                        <div class="cc-bottom-tile" data-tile="torch">
+                            <span>🔦</span>
+                            <span>Torch</span>
+                        </div>
+                        <div class="cc-bottom-tile" data-tile="calc">
+                            <span>🧮</span>
+                            <span>Calc</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="app-switcher-overlay" id="appSwitcher">
+                    <div style="color:white; font-size:16px; font-weight:600; margin-bottom:6px; pointer-events:none;">App Switcher</div>
+                    <div class="switcher-carousel" id="switcherCarousel">
+                        </div>
+                </div>
+
+                <div class="home-indicator" id="homeIndicator"></div>
+
+                <div class="app-window hidden" id="appWindowContainer">
+                    <div class="app-header" id="activeAppHeader">App</div>
+                    <div class="app-content" id="activeAppContent">Content</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="telemetry-footer">
+            <span id="telemetry-tilt">Tilt Telemetry: P: 0° | R: 0°</span>
+            <span id="telemetry-status">Ringer: SILENCED</span>
+            <span id="telemetry-view">Interface View: HOME</span>
+        </div>
+    </div>
+
+    <script>
+        // --- Custom Cursor & Color Customization ---
+        const viewport = document.getElementById('viewport');
+        const customCursor = document.getElementById('customCursor');
+
+        viewport.addEventListener('mousemove', (e) => {
+            const rect = viewport.getBoundingClientRect();
+            customCursor.style.left = `${e.clientX - rect.left}px`;
+            customCursor.style.top = `${e.clientY - rect.top}px`;
+        });
+        viewport.addEventListener('mousedown', () => customCursor.classList.add('active'));
+        viewport.addEventListener('mouseup', () => customCursor.classList.remove('active'));
+
+        const cursorColors = {
+            'white': { bg: 'rgba(255, 255, 255, 0.2)', border: 'rgba(255, 255, 255, 0.7)' },
+            'blue': { bg: 'rgba(0, 122, 255, 0.3)', border: '#007AFF' },
+            'green': { bg: 'rgba(52, 199, 89, 0.3)', border: '#34C759' },
+            'red': { bg: 'rgba(255, 59, 48, 0.3)', border: '#FF3B30' },
+            'yellow': { bg: 'rgba(255, 204, 0, 0.3)', border: '#FFCC00' }
+        };
+
+        document.querySelectorAll('.cursor-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.cursor-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                const cKey = option.getAttribute('data-color');
+                const palette = cursorColors[cKey];
+                document.documentElement.style.setProperty('--cursor-color', palette.bg);
+                document.documentElement.style.setProperty('--cursor-border', palette.border);
+            });
+        });
+
+        // --- Clock Management ---
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const timeStr = `${hours}:${minutes}`;
+            document.getElementById('clock').textContent = timeStr;
+            document.getElementById('lock-clock').textContent = timeStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Global Gesture & Pagination Engine ---
+        const track = document.getElementById('track');
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let currentTranslateX = 0;
+        let currentPageIndex = 0;
+        const phoneWidth = 360;
+        const totalPages = 2;
+
+        viewport.addEventListener('mousedown', (e) => {
+            if (e.target.closest('#control-view') && (e.target.closest('#brightnessPillar') || e.target.closest('#volumePillar'))) return;
+            const rect = viewport.getBoundingClientRect();
+            dragStart(e.clientX - rect.left, e.clientY - rect.top);
+        });
+        window.addEventListener('mousemove', (e) => {
+            const rect = viewport.getBoundingClientRect();
+            dragMove(e.clientX - rect.left, e.clientY - rect.top);
+        });
+        window.addEventListener('mouseup', dragEnd);
+
+        viewport.addEventListener('touchstart', (e) => {
+            if (e.target.closest('#control-view') && (e.target.closest('#brightnessPillar') || e.target.closest('#volumePillar'))) return;
+            const rect = viewport.getBoundingClientRect();
+            dragStart(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        }, {passive: true});
+        window.addEventListener('touchmove', (e) => {
+            const rect = viewport.getBoundingClientRect();
+            dragMove(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+        }, {passive: true});
+        window.addEventListener('touchend', dragEnd);
+
+        function dragStart(x, y) {
+            isDragging = true;
+            startX = x;
+            startY = y;
+            track.classList.remove('smooth-animate');
+        }
+
+        function dragMove(x, y) {
+            if (!isDragging) return;
+            const deltaX = x - startX;
+            const deltaY = y - startY;
+
+            // 1. Lock screen: Swipe up to unlock
+            if (currentView === 'lock' && deltaY < -30 && Math.abs(deltaX) < 100) {
+                isDragging = false;
+                switchView('home');
+                return;
+            }
+
+            // 2. Control/Notification Center: Swipe UP to close
+            if ((currentView === 'control' || currentView === 'notification') && deltaY < -30 && Math.abs(deltaX) < 100) {
+                isDragging = false;
+                switchView('home');
+                return;
+            }
+
+            // 3. Swipe DOWN from top area
+            if (currentView === 'home' && !appSwitcher.classList.contains('active') && startY < 120 && deltaY > 50 && Math.abs(deltaX) < 100) {
+                isDragging = false;
+                if (startX > 230) {
+                    switchView('control');
+                } else {
+                    switchView('notification');
+                }
+                return;
+            }
+
+            // 4. Swipe up from bottom: Open app switcher or close active app
+            if (deltaY < -40 && Math.abs(deltaX) < 60 && !appSwitcher.classList.contains('active')) {
+                isDragging = false;
+                if (currentActiveApp) {
+                    if (deltaY < -100) {
+                        closeActiveApp();
+                    } else {
+                        openAppSwitcher();
+                    }
+                } else if (currentView === 'home') {
+                    openAppSwitcher();
+                }
+                return;
+            }
+
+            if (currentActiveApp || currentView !== 'home' || appSwitcher.classList.contains('active')) return;
+
+            let targetTranslate = (-currentPageIndex * phoneWidth) + deltaX;
+            if (targetTranslate > 0) targetTranslate *= 0.3;
+            else if (targetTranslate < -(totalPages - 1) * phoneWidth) {
+                targetTranslate = (-(totalPages - 1) * phoneWidth) + ((targetTranslate - (-(totalPages - 1) * phoneWidth)) * 0.3);
+            }
+
+            track.style.transform = `translateX(${targetTranslate}px)`;
+            currentTranslateX = targetTranslate;
+        }
+
+        function dragEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            if (appSwitcher.classList.contains('active')) return;
+            track.classList.add('smooth-animate');
+
+            const basePos = -currentPageIndex * phoneWidth;
+            const distanceMoved = currentTranslateX - basePos;
+
+            if (distanceMoved < -80 && currentPageIndex < totalPages - 1) currentPageIndex++;
+            else if (distanceMoved > 80 && currentPageIndex > 0) currentPageIndex--;
+            snapToPage(currentPageIndex);
+        }
+
+        function snapToPage(index) {
+            currentPageIndex = index;
+            track.style.transform = `translateX(${-index * phoneWidth}px)`;
+            document.getElementById('dot0').classList.toggle('active', index === 0);
+            document.getElementById('dot1').classList.toggle('active', index === 1);
+        }
+
+        // --- View Switcher Logic ---
+        let currentView = 'home';
+        const viewButtons = document.querySelectorAll('#view-selector .segment-btn');
+
+        function switchView(viewName) {
+            if (currentActiveApp) closeActiveApp();
+            if (appSwitcher.classList.contains('active')) appSwitcher.classList.remove('active');
+            currentView = viewName;
+            document.getElementById('home-view-container').classList.toggle('active', viewName === 'home');
+            document.getElementById('lock-view').classList.toggle('active', viewName === 'lock');
+            document.getElementById('notification-view').classList.toggle('active', viewName === 'notification');
+            document.getElementById('control-view').classList.toggle('active', viewName === 'control');
+
+            viewButtons.forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-view') === viewName));
+            document.getElementById('telemetry-view').textContent = `Interface View: ${viewName.toUpperCase()}`;
+        }
+
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', () => switchView(btn.getAttribute('data-view')));
+        });
+
+        // --- Control Center Elements ---
+        document.querySelectorAll('.cc-icon-btn').forEach(btn => {
+            btn.addEventListener('click', () => btn.classList.toggle('active'));
+        });
+        document.querySelectorAll('.cc-bottom-tile').forEach(tile => {
+            tile.addEventListener('click', () => tile.classList.toggle('active'));
+        });
+
+        let brightnessVal = 79;
+        let volumeVal = 79;
+
+        const brightnessPillar = document.getElementById('brightnessPillar');
+        const brightnessFill = document.getElementById('brightnessFill');
+        const brightnessValLabel = document.getElementById('brightnessVal');
+
+        const volumePillar = document.getElementById('volumePillar');
+        const volumeFill = document.getElementById('volumeFill');
+        const volumeValLabel = document.getElementById('volumeVal');
+
+        function updateBrightness(percent) {
+            percent = Math.max(10, Math.min(100, percent));
+            brightnessVal = percent;
+            brightnessFill.style.height = `${percent}%`;
+            brightnessValLabel.textContent = `${percent}%`;
+            document.documentElement.style.setProperty('--screen-dimming', percent / 100);
+        }
+
+        function updateVolume(percent) {
+            percent = Math.max(0, Math.min(100, percent));
+            volumeVal = percent;
+            volumeFill.style.height = `${percent}%`;
+            volumeValLabel.textContent = `${percent}%`;
+        }
+
+        let isDraggingBrightness = false;
+        brightnessPillar.addEventListener('mousedown', (e) => { isDraggingBrightness = true; handleBrightnessDrag(e); });
+        window.addEventListener('mousemove', (e) => { if (isDraggingBrightness) handleBrightnessDrag(e); });
+        window.addEventListener('mouseup', () => { isDraggingBrightness = false; });
+        brightnessPillar.addEventListener('touchstart', (e) => { isDraggingBrightness = true; handleBrightnessDrag(e.touches[0]); }, {passive: true});
+        window.addEventListener('touchmove', (e) => { if (isDraggingBrightness) handleBrightnessDrag(e.touches[0]); }, {passive: true});
+        window.addEventListener('touchend', () => { isDraggingBrightness = false; });
+
+        function handleBrightnessDrag(e) {
+            const rect = brightnessPillar.getBoundingClientRect();
+            const clickY = e.clientY - rect.top;
+            let percent = Math.round(((rect.height - clickY) / rect.height) * 100);
+            updateBrightness(percent);
+        }
+
+        let isDraggingVolume = false;
+        volumePillar.addEventListener('mousedown', (e) => { isDraggingVolume = true; handleVolumeDrag(e); });
+        window.addEventListener('mousemove', (e) => { if (isDraggingVolume) handleVolumeDrag(e); });
+        window.addEventListener('mouseup', () => { isDraggingVolume = false; });
+        volumePillar.addEventListener('touchstart', (e) => { isDraggingVolume = true; handleVolumeDrag(e.touches[0]); }, {passive: true});
+        window.addEventListener('touchmove', (e) => { if (isDraggingVolume) handleVolumeDrag(e.touches[0]); }, {passive: true});
+        window.addEventListener('touchend', () => { isDraggingVolume = false; });
+
+        function handleVolumeDrag(e) {
+            const rect = volumePillar.getBoundingClientRect();
+            const clickY = e.clientY - rect.top;
+            let percent = Math.round(((rect.height - clickY) / rect.height) * 100);
+            updateVolume(percent);
+        }
+
+        // --- External Hardware Buttons Functionality ---
+        const hwLockBtn = document.getElementById('hwLockBtn');
+        const hwActionBtn = document.getElementById('hwActionBtn');
+        const hwVolUp = document.getElementById('hwVolUp');
+        const hwVolDown = document.getElementById('hwVolDown');
+        const dynamicIsland = document.getElementById('dynamicIsland');
+        const diBellIcon = document.getElementById('diBellIcon');
+        const diBellText = document.getElementById('diBellText');
+
+        let isSilenced = true;
+        let diTimeout = null;
+
+        hwLockBtn.addEventListener('click', () => {
+            switchView(currentView === 'lock' ? 'home' : 'lock');
+        });
+
+        document.getElementById('btn-lock-toggle').addEventListener('click', () => {
+            switchView(currentView === 'lock' ? 'home' : 'lock');
+        });
+
+        hwActionBtn.addEventListener('click', () => {
+            isSilenced = !isSilenced;
+            if (isSilenced) {
+                diBellIcon.textContent = '🔕';
+                diBellIcon.style.color = '#ff3b30';
+                diBellText.textContent = 'Silent';
+                document.getElementById('telemetry-status').textContent = 'Ringer: SILENCED';
+            } else {
+                diBellIcon.textContent = '🔔';
+                diBellIcon.style.color = '#34c759';
+                diBellText.textContent = 'Ring';
+                document.getElementById('telemetry-status').textContent = 'Ringer: ACTIVE';
+            }
+
+            dynamicIsland.classList.add('pill-expanded');
+            if (diTimeout) clearTimeout(diTimeout);
+            diTimeout = setTimeout(() => {
+                dynamicIsland.classList.remove('pill-expanded');
+            }, 2500);
+        });
+
+        dynamicIsland.addEventListener('click', () => {
+            if (dynamicIsland.classList.contains('pill-expanded')) {
+                dynamicIsland.classList.remove('pill-expanded');
+                if (diTimeout) clearTimeout(diTimeout);
+            }
+        });
+
+        hwVolUp.addEventListener('click', () => {
+            updateVolume(Math.min(100, volumeVal + 10));
+        });
+
+        hwVolDown.addEventListener('click', () => {
+            updateVolume(Math.max(0, volumeVal - 10));
+        });
+
+        // --- 3D Device Tilt & Parallax Physics ---
+        const pitchSlider = document.getElementById('pitch-slider');
+        const rollSlider = document.getElementById('roll-slider');
+        const phoneContainer = document.getElementById('phoneContainer');
+        const wallpaper = document.getElementById('wallpaper');
+
+        function updateTilt(pitch, roll) {
+            pitchSlider.value = pitch;
+            rollSlider.value = roll;
+            document.getElementById('pitch-val').textContent = `${pitch}°`;
+            document.getElementById('roll-val').textContent = `${roll}°`;
+            document.getElementById('telemetry-tilt').textContent = `Tilt Telemetry: P: ${pitch}° | R: ${roll}°`;
+
+            phoneContainer.style.transform = `perspective(1000px) rotateX(${-pitch}deg) rotateY(${roll}deg)`;
+
+            const xOffset = (roll / 45) * 15;
+            const yOffset = (pitch / 45) * 15;
+            wallpaper.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(1.15)`;
+        }
+
+        pitchSlider.addEventListener('input', (e) => updateTilt(e.target.value, rollSlider.value));
+        rollSlider.addEventListener('input', (e) => updateTilt(pitchSlider.value, e.target.value));
+
+        document.getElementById('btn-reset-tilt').addEventListener('click', () => updateTilt(0, 0));
+
+        // --- App Launching & App Switcher Logic ---
+        let currentActiveApp = null;
+        let openedAppsList = ['settings', 'weather', 'photos']; 
+        const appWindowContainer = document.getElementById('appWindowContainer');
+        const activeAppHeader = document.getElementById('activeAppHeader');
+        const activeAppContent = document.getElementById('activeAppContent');
+        const appSwitcher = document.getElementById('appSwitcher');
+        const switcherCarousel = document.getElementById('switcherCarousel');
+
+        const appDatabase = {
+            'settings': { title: 'Settings', icon: '⚙️', bg: '#8e8e93', content: '<div class="settings-group"><div class="settings-item"><span>Wi-Fi</span><label class="switch"><input type="checkbox" checked><span class="slider-toggle"></span></label></div><div class="settings-item"><span>Bluetooth</span><label class="switch"><input type="checkbox"><span class="slider-toggle"></span></label></div></div>' },
+            'weather': { title: 'Weather', icon: '☀️', bg: 'linear-gradient(#52c2ff, #007aff)', content: '<p style="font-size:16px; font-weight:600;">New York</p><p style="font-size:32px; font-weight:300; margin-top:10px;">72° Sunny</p>' },
+            'photos': { title: 'Photos', icon: '🖼️', bg: 'linear-gradient(#FF9500, #FF2D55)', content: '<div class="photos-grid"><div class="photo-thumb" style="background-image: url(\'https://picsum.photos/id/1015/200/200\')"></div><div class="photo-thumb" style="background-image: url(\'https://picsum.photos/id/1025/200/200\')"></div></div>' },
+            'safari': { title: 'Safari', icon: '🧭', bg: '#ffffff', content: '<input type="text" value="https://developer.apple.com" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:14px;">' },
+            'messages': { title: 'Messages', icon: '💬', bg: 'linear-gradient(#34aadc, #007aff)', content: '<p style="color:#555;">No unread messages</p>' },
+            'maps': { title: 'Maps', icon: '🗺️', bg: 'linear-gradient(#34c759, #28a745)', content: '<p style="color:#555;">Current location: New York</p>' },
+            'phone': { title: 'Phone', icon: '📞', bg: 'linear-gradient(#54e346, #21bf12)', content: '<p style="color:#555;">Recents and Keypad</p>' },
+            'mail': { title: 'Mail', icon: '✉️', bg: '#2c2c2e', content: '<p style="color:#555;">Inbox (0 unread)</p>' },
+            'music': { title: 'Music', icon: '🎵', bg: 'linear-gradient(#ff5e3a, #ff2a68)', content: '<p style="color:#555;">Listen Now</p>' },
+            'podcasts': { title: 'Podcasts', icon: '🎙️', bg: 'linear-gradient(#af52de, #8944ab)', content: '<p style="color:#555;">Browse Shows</p>' }
+        };
+
+        document.querySelectorAll('.app-icon').forEach(app => {
+            app.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const appKey = app.getAttribute('data-app');
+                openApp(appKey);
+            });
+        });
+
+        function openApp(appKey) {
+            const data = appDatabase[appKey] || { title: appKey.toUpperCase(), icon: '📱', bg: '#ccc', content: `<p>Active session for ${appKey}</p>` };
+            activeAppHeader.textContent = data.title;
+            activeAppContent.innerHTML = data.content;
+            appWindowContainer.classList.remove('hidden');
+            currentActiveApp = appKey;
+
+            if (!openedAppsList.includes(appKey)) openedAppsList.push(appKey);
+        }
+
+        function closeActiveApp() {
+            appWindowContainer.classList.add('hidden');
+            currentActiveApp = null;
+        }
+
+        function openAppSwitcher() {
+            renderSwitcherCards();
+            appSwitcher.classList.add('active');
+        }
+
+        function renderSwitcherCards() {
+            switcherCarousel.innerHTML = '';
+            
+            if (openedAppsList.length === 0) {
+                switcherCarousel.innerHTML = `<div class="switcher-empty-msg">No open apps.<br>Closing App Switcher...</div>`;
+                setTimeout(() => {
+                    appSwitcher.classList.remove('active');
+                }, 400);
+                return;
+            }
+
+            openedAppsList.forEach(appKey => {
+                const info = appDatabase[appKey] || { title: appKey, icon: '📱', bg: '#ccc', content: 'Active preview' };
+                const card = document.createElement('div');
+                card.className = `switcher-card ${currentActiveApp === appKey ? 'active-card' : ''}`;
+                card.innerHTML = `
+                    <div class="switcher-card-top">
+                        <div class="switcher-app-icon" style="background: ${info.bg};">${info.icon}</div>
+                        <div class="switcher-card-title">${info.title}</div>
+                    </div>
+                    <div class="switcher-card-preview">${info.content.substring(0, 60)}...</div>
+                `;
+
+                // --- Precise Card Swipe-Up to Close Individual App ---
+                let cardStartY = 0;
+                let cardCurrentY = 0;
+                let cardIsDragging = false;
+                let cardMovedDistance = 0;
+
+                card.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                    cardIsDragging = true;
+                    cardStartY = e.touches[0].clientY;
+                    cardMovedDistance = 0;
+                    card.style.transition = 'none';
+                }, {passive: true});
+
+                card.addEventListener('touchmove', (e) => {
+                    if (!cardIsDragging) return;
+                    e.stopPropagation();
+                    cardCurrentY = e.touches[0].clientY;
+                    cardMovedDistance = cardStartY - cardCurrentY;
+                    if (cardMovedDistance > 5) {
+                        card.style.transform = `translateY(${-cardMovedDistance}px) scale(0.95)`;
+                    }
+                }, {passive: true});
+
+                card.addEventListener('touchend', (e) => {
+                    if (!cardIsDragging) return;
+                    e.stopPropagation();
+                    cardIsDragging = false;
+                    card.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+
+                    if (cardMovedDistance > 70) {
+                        card.style.transform = 'translateY(-160px) scale(0.8)';
+                        card.style.opacity = '0';
+                        setTimeout(() => {
+                            openedAppsList = openedAppsList.filter(k => k !== appKey);
+                            if (currentActiveApp === appKey) closeActiveApp();
+                            renderSwitcherCards();
+                        }, 250);
+                    } else {
+                        card.style.transform = '';
+                    }
+                });
+
+                card.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    cardIsDragging = true;
+                    cardStartY = e.clientY;
+                    cardMovedDistance = 0;
+                    card.style.transition = 'none';
+
+                    const onMouseMove = (moveEvent) => {
+                        if (!cardIsDragging) return;
+                        moveEvent.stopPropagation();
+                        cardMovedDistance = cardStartY - moveEvent.clientY;
+                        if (cardMovedDistance > 5) {
+                            card.style.transform = `translateY(${-cardMovedDistance}px) scale(0.95)`;
+                        }
+                    };
+
+                    const onMouseUp = (upEvent) => {
+                        if (!cardIsDragging) return;
+                        upEvent.stopPropagation();
+                        cardIsDragging = false;
+                        card.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+
+                        if (cardMovedDistance > 70) {
+                            card.style.transform = 'translateY(-160px) scale(0.8)';
+                            card.style.opacity = '0';
+                            setTimeout(() => {
+                                openedAppsList = openedAppsList.filter(k => k !== appKey);
+                                if (currentActiveApp === appKey) closeActiveApp();
+                                renderSwitcherCards();
+                            }, 250);
+                        } else {
+                            card.style.transform = '';
+                        }
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                });
+
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (cardMovedDistance > 10) return;
+                    appSwitcher.classList.remove('active');
+                    openApp(appKey);
+                });
+
+                switcherCarousel.appendChild(card);
+            });
+        }
+
+        // --- Robust Switcher Drag & Tap Outside Handling ---
+        let isSwitcherDragging = false;
+        let switcherStartX = 0;
+        let switcherStartScrollLeft = 0;
+        let hasScrolledSignificantly = false;
+
+        appSwitcher.addEventListener('mousedown', (e) => {
+            isSwitcherDragging = true;
+            switcherStartX = e.clientX;
+            switcherStartScrollLeft = switcherCarousel.scrollLeft;
+            hasScrolledSignificantly = false;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isSwitcherDragging) return;
+            const diffX = e.clientX - switcherStartX;
+            if (Math.abs(diffX) > 5) hasScrolledSignificantly = true;
+            switcherCarousel.scrollLeft = switcherStartScrollLeft - (diffX * 1.5);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isSwitcherDragging = false;
+        });
+
+        appSwitcher.addEventListener('touchstart', (e) => {
+            isSwitcherDragging = true;
+            switcherStartX = e.touches[0].clientX;
+            switcherStartScrollLeft = switcherCarousel.scrollLeft;
+            hasScrolledSignificantly = false;
+        }, {passive: true});
+
+        appSwitcher.addEventListener('touchmove', (e) => {
+            if (!isSwitcherDragging) return;
+            const diffX = e.touches[0].clientX - switcherStartX;
+            if (Math.abs(diffX) > 5) hasScrolledSignificantly = true;
+            switcherCarousel.scrollLeft = switcherStartScrollLeft - (diffX * 1.5);
+        }, {passive: true});
+
+        appSwitcher.addEventListener('touchend', () => {
+            isSwitcherDragging = false;
+        });
+
+        appSwitcher.addEventListener('click', (e) => {
+            if (hasScrolledSignificantly) return;
+            if (!e.target.closest('.switcher-card')) {
+                appSwitcher.classList.remove('active');
+                if (currentActiveApp) closeActiveApp();
+            }
+        });
+
+        document.getElementById('homeIndicator').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (appSwitcher.classList.contains('active')) {
+                appSwitcher.classList.remove('active');
+                if (currentActiveApp) closeActiveApp();
+            } else if (currentActiveApp) {
+                closeActiveApp();
+            } else {
+                openAppSwitcher();
+            }
+        });
+
+        // --- Theme Selector ---
+        const themes = {
+            '1': 'linear-gradient(180deg, #2b5876 0%, #4e4376 100%)',
+            '2': 'linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)',
+            '3': 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)'
+        };
+        document.querySelectorAll('.theme-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                document.documentElement.style.setProperty('--wallpaper-grad', themes[swatch.getAttribute('data-theme')]);
+            });
+        });
+    </script>
+</body>
+</html>
